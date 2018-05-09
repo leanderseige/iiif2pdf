@@ -1,4 +1,4 @@
-
+/* test */
 
 function recSearch(uri,data) {
   var retval = false
