@@ -1,3 +1,7 @@
+/*
+ * (c) Leander Seige, 2018, GPL Version 3, leander@seige.name
+ */
+
 // Function
 
 function recSearch(uri,data) {
@@ -52,29 +56,52 @@ iiifManifest.prototype.getSubset = function(uri) {
 
 function iiifCanvas(data) {
   this.data = data
+  this.img = null
 }
 
-iiifCanvas.prototype.getB64Image = function() {
+iiifCanvas.prototype.addImage = function(pdfobj) {
   var surl = this.data['images'][0]['resource']['service']['@id']
-  
+  var iurl = surl+"/full/1024,/0/default.jpg"
+  this.img = new Image;
+  this.img.crossOrigin = "";
+  this.img.onload = function() {
+    var width = pdfobj.document.internal.pageSize.width;
+    var height = pdfobj.document.internal.pageSize.height
+    if(pdfobj.countdown!=pdfobj.canvases.length) {
+      pdfobj.document.addPage()
+    }
+    pdfobj.document.addImage(this, 0, 0, width, height  );
+    pdfobj.countdown--
+    console.log(pdfobj.countdown)
+    if(pdfobj.countdown==0) {
+      pdfobj.document.save("test.pdf")
+    }
+  };
+  this.img.src = iurl;
 }
 
 // Class docPDF
 
 function pdfDoc(canvases,m) {
   this.canvases = canvases
+  this.countdown = canvases.length
+  this.document = new jsPDF()
+
   for(c in canvases) {
     var subset = m.getSubset(canvases[c])
     var canvobj = new iiifCanvas(subset)
-    var image = canvobj.getB64Image()
+    var image = canvobj.addImage(this)
   }
+
 }
 
 // Start
 
 $(document).ready(function () {
-  var manifest = "https://iiif.ub.uni-leipzig.de/0000009283/manifest.json"
-  var uri = "https://iiif.ub.uni-leipzig.de/0000009283/range/LOG_0009"
+  // var manifest = "https://iiif.ub.uni-leipzig.de/0000009283/manifest.json"
+  // var uri = "https://iiif.ub.uni-leipzig.de/0000009283/range/LOG_0009"
+  var manifest = "https://iiif.ub.uni-leipzig.de/0000002636/manifest.json"
+  var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
 
   $.getJSON(manifest,function(result){
     var m = new iiifManifest(manifest,result)
@@ -85,18 +112,5 @@ $(document).ready(function () {
     var doc = new pdfDoc(canvases,m)
   })
 
-
-
-/*
-  var op = document.getElementById("output")
-  var data = $.getJSON(manifest).response
-  console.log(data)
-
-  var m = new iiifManifest(manifest,data)
-
-  m.getURI()
-
-  op.innerHTML="ok!"
-*/
 
 })
