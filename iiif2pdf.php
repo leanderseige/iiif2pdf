@@ -93,11 +93,18 @@ class docPDF {
     }
 
     public function addFile($url) {
-        $temp_file = sys_get_temp_dir()."/".md5($url).".jpg";
+        $bytes = openssl_random_pseudo_bytes(16);
+        $hex = bin2hex($bytes);
+        $temp_file = sys_get_temp_dir()."/".$hex."_".md5($url).".jpg";
         $in_url = $url."/full/full/0/default.jpg";
         $temp_data = $this->getSslPage($in_url);
-        file_put_contents($temp_file,$temp_data); 
-        $this->in_files[] = $temp_file;
+        file_put_contents($temp_file,$temp_data);
+        if(exif_imagetype($temp_file) != IMAGETYPE_JPEG){
+            echo 'corrupt jpeg file';
+            unlink($temp_file);
+        } else {
+            $this->in_files[] = $temp_file;
+        }
     }
 
 }
@@ -121,11 +128,11 @@ $manifest = new iiifManifest($m);
 
 $range = $manifest->getSubset($u,null);
 
-$range = new iiifRange($manifest->getSubset($u,null));
+$object = new iiifRange($manifest->getSubset($u,null));
 
 $canvases = array();
 
-foreach($range->getCanvases() as $c) {
+foreach($object->getCanvases() as $c) {
     $co = new iiifCanvas($manifest->getSubset($c,null));
     $canvases[] = $co;
 }
@@ -139,6 +146,10 @@ foreach($canvases as $c) {
 $pdf = new Imagick($pdf->in_files);
 $pdf->setImageFormat('pdf');
 $pdf->writeImages('/tmp/combined.pdf', true); 
+
+foreach($pdf->in_files as $f) {
+    unlink($f);
+}
 
 header('Content-type: application/pdf');
 header('Content-Disposition: attachment; filename="test.pdf"');
