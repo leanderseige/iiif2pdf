@@ -1,8 +1,7 @@
 <?php
 
 /*
- * This small program takes an URL to a IIIF manuifest and an @id (URI) and
- * generates a PDF file on the fly.
+ * This small program generates PDF files from IIIF sources on the fly.
  *
  * (c) Leander Seige, 2018, leander@seige.name
  *
