@@ -11,12 +11,12 @@ function iiif2pdf(config) {
 // var uri = "https://iiif.ub.uni-leipzig.de/0000009283/range/LOG_0009"
 
 // Example 1: a Range
-var manifest = "https://iiif.ub.uni-leipzig.de/0000002636/manifest.json"
-var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
+// var manifest = "https://iiif.ub.uni-leipzig.de/0000002636/manifest.json"
+// var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
 
 // Example 2: a Sequence
-// var manifest = "https://iiif.ub.uni-leipzig.de/0000009359/manifest.json"
-// var uri = "https://iiif.ub.uni-leipzig.de/0000009359/sequence/1"
+var manifest = "https://iiif.ub.uni-leipzig.de/0000009359/manifest.json"
+var uri = "https://iiif.ub.uni-leipzig.de/0000009359/sequence/1"
 
 // var manifest = "https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/manifest.json"
 // var uri = "https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/range/r0-0"
@@ -27,24 +27,26 @@ var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
 var gui_progress
 var gui_btnsave
 var gui_btncreate
-var gui_rangeres
-var gui_displayres
+var gui_selectres
 
 $(document).ready(function () {
 
   var divid = document.getElementById(config["div_id"])
 
-  gui_rangeres = document.createElement("input");
-  gui_rangeres.setAttribute("type", "range");
-  gui_rangeres.setAttribute("min", "0");
-  gui_rangeres.setAttribute("max", "100");
-  gui_rangeres.setAttribute("value", "100");
-  divid.appendChild(gui_rangeres)
+  var array = ["Max","2048","1024","512"];
 
-  gui_displayres = document.createElement("input");
-  gui_displayres.setAttribute("type", "text");
-  gui_displayres.setAttribute("value", "100");
-  divid.appendChild(gui_displayres)
+  gui_selectres = document.createElement("select");
+  divid.appendChild(gui_selectres)
+
+  for (var i = 0; i < array.length; i++) {
+      var option = document.createElement("option");
+      option.value = array[i];
+      option.text = array[i];
+      if(array[i]=="1024") {
+        option.setAttribute("selected",true)
+      }
+      gui_selectres.appendChild(option);
+  }
 
   gui_progress = document.createElement("progress")
   gui_progress.setAttribute("value", "0")
@@ -65,6 +67,14 @@ $(document).ready(function () {
 
 })
 
+// GUI Callbacks
+
+function guicb_res() {
+  var value = gui_rangeres.value
+  gui_displayres.value = value
+}
+
+// Misc Functions
 
 function recSearch(uri,data) {
   var retval = false
@@ -153,7 +163,11 @@ function iiifCanvas(data) {
 
 iiifCanvas.prototype.getImage = function(pdfobj) {
   var surl = this.data['images'][0]['resource']['service']['@id']
-  var iurl = surl+"/full/1024,/0/default.jpg"
+  if(gui_selectres.value=="Max") {
+    var iurl = surl+"/full/full/0/default.jpg"
+  } else {
+    var iurl = surl+"/full/"+gui_selectres.value+",/0/default.jpg"
+  }
   this.img = new Image
   this.img.crossOrigin = "Anonymous"
   this.img.onload = function() {
