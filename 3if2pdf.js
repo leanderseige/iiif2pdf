@@ -2,6 +2,8 @@
  * (c) Leander Seige, 2018, GPL Version 3, leander@seige.name
  */
 
+// Global Variables
+
 // Function
 
 function recSearch(uri,data) {
@@ -75,7 +77,9 @@ iiifCanvas.prototype.addImage = function(pdfobj) {
     console.log(pdfobj.cd)
     $("#progressbar").progressbar({value: ((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx});
     if(pdfobj.cd==0) {
-      // pdfobj.document.save("test.pdf")
+      $("#buttondl").click(function(){
+            pdfobj.savePDF()
+        })
     }
   };
   this.img.src = iurl;
@@ -97,14 +101,19 @@ function pdfDoc(canvases,m) {
 
 }
 
+pdfDoc.prototype.savePDF = function() {
+  this.document.save("test.pdf")
+}
+
 // Start
 
 $("#progressbar").progressbar()
-$("#buttondl").button("disable");
+$("#buttondl").prop('disabled', true);
 
 $(document).ready(function () {
   // var manifest = "https://iiif.ub.uni-leipzig.de/0000009283/manifest.json"
   // var uri = "https://iiif.ub.uni-leipzig.de/0000009283/range/LOG_0009"
+  
   var manifest = "https://iiif.ub.uni-leipzig.de/0000002636/manifest.json"
   var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
 
