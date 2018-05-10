@@ -1,248 +1,233 @@
 /*
+ *
  * (c) Leander Seige, 2018, GPL Version 3, leander@seige.name
+ *
  */
 
 
 function iiif2pdf(config) {
 
-// Global Variables
+  var gui_progress
+  var gui_btnsave
+  var gui_btncreate
+  var gui_selectres
 
-// var manifest = "https://iiif.ub.uni-leipzig.de/0000009283/manifest.json"
-// var uri = "https://iiif.ub.uni-leipzig.de/0000009283/range/LOG_0009"
+  var manifest
+  var uri
 
-// Example 1: a Range
-// var manifest = "https://iiif.ub.uni-leipzig.de/0000002636/manifest.json"
-// var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
+  $(document).ready(function () {
 
-// Example 2: a Sequence
-var manifest = "https://iiif.ub.uni-leipzig.de/0000009359/manifest.json"
-var uri = "https://iiif.ub.uni-leipzig.de/0000009359/sequence/1"
+    var divid = document.getElementById(config["div_id"])
 
-// var manifest = "https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/manifest.json"
-// var uri = "https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/range/r0-0"
+    manifest = config["manifest"]
+    uri = config["uri"]
 
+    var array = ["Max","2048","1024","512"]
 
-// Function
+    gui_selectres = document.createElement("select")
+    divid.appendChild(gui_selectres)
 
-var gui_progress
-var gui_btnsave
-var gui_btncreate
-var gui_selectres
+    for (var i = 0; i < array.length; i++) {
+        var option = document.createElement("option")
+        option.value = array[i]
+        option.text = array[i]
+        if(array[i]=="1024") {
+          option.setAttribute("selected",true)
+        }
+        gui_selectres.appendChild(option)
+    }
 
-$(document).ready(function () {
+    gui_progress = document.createElement("progress")
+    gui_progress.setAttribute("value", "0")
+    gui_progress.setAttribute("max", "100")
+    divid.appendChild(gui_progress)
 
-  var divid = document.getElementById(config["div_id"])
+    gui_btncreate = document.createElement("button")
+    var create_txt = document.createTextNode("Create PDF")
+    gui_btncreate.appendChild(create_txt)
+    divid.appendChild(gui_btncreate)
+    gui_btncreate.onclick=function(){createPDF()}
 
-  var array = ["Max","2048","1024","512"];
+    gui_btnsave = document.createElement("button")
+    gui_btnsave.setAttribute("disabled","true")
+    var save_txt = document.createTextNode("Save PDF")
+    gui_btnsave.appendChild(save_txt)
+    divid.appendChild(gui_btnsave)
 
-  gui_selectres = document.createElement("select");
-  divid.appendChild(gui_selectres)
+  })
 
-  for (var i = 0; i < array.length; i++) {
-      var option = document.createElement("option");
-      option.value = array[i];
-      option.text = array[i];
-      if(array[i]=="1024") {
-        option.setAttribute("selected",true)
-      }
-      gui_selectres.appendChild(option);
+  // GUI Callbacks
+
+  function guicb_res() {
+    var value = gui_rangeres.value
+    gui_displayres.value = value
   }
 
-  gui_progress = document.createElement("progress")
-  gui_progress.setAttribute("value", "0")
-  gui_progress.setAttribute("max", "100")
-  divid.appendChild(gui_progress)
+  // Misc Functions
 
-  gui_btncreate = document.createElement("button")
-  var create_txt = document.createTextNode("Create PDF")
-  gui_btncreate.appendChild(create_txt)
-  divid.appendChild(gui_btncreate)
-  gui_btncreate.onclick=function(){createPDF()}
-
-  gui_btnsave = document.createElement("button")
-  gui_btnsave.setAttribute("disabled","true")
-  var save_txt = document.createTextNode("Save PDF")
-  gui_btnsave.appendChild(save_txt)
-  divid.appendChild(gui_btnsave)
-
-})
-
-// GUI Callbacks
-
-function guicb_res() {
-  var value = gui_rangeres.value
-  gui_displayres.value = value
-}
-
-// Misc Functions
-
-function recSearch(uri,data) {
-  var retval = false
-  for(e in data) {
-      if(data[e] instanceof Object ) {
-        if('@id' in data[e]) {
-          if(data[e]['@id'] == uri) {
-            return data[e]
+  function recSearch(uri,data) {
+    var retval = false
+    for(e in data) {
+        if(data[e] instanceof Object ) {
+          if('@id' in data[e]) {
+            if(data[e]['@id'] == uri) {
+              return data[e]
+            }
           }
+          retval = recSearch(uri,data[e])
+          if(retval!=false) return retval
         }
-        retval = recSearch(uri,data[e])
-        if(retval!=false) return retval
       }
+      return retval
+    }
+
+  function createPDF() {
+    gui_btncreate.setAttribute("disabled","true")
+    gui_selectres.setAttribute("disabled","true")
+    $.getJSON(manifest,function(result){
+      var m = new iiifManifest(manifest,result)
+      m.getURI()
+      var subset = m.getSubset(uri)
+      if(subset['@type']=="sc:Range") {
+        var iiifobj = new iiifRange(subset)
+      } else if(subset['@type']=="sc:Sequence") {
+        var iiifobj = new iiifSequence(subset)
+      }
+      var canvases = iiifobj.getCanvases()
+      var doc = new pdfDoc(iiifobj,canvases,m)
+    })
+  }
+
+  // Class iiifRange
+
+  function iiifRange(data) {
+    this.data = data
+  }
+
+  iiifRange.prototype.getCanvases = function() {
+    var retval = []
+    for(e in this.data['canvases']) {
+      retval.push(this.data['canvases'][e])
     }
     return retval
   }
 
-function createPDF() {
-  gui_btncreate.setAttribute("disabled","true")
-  $.getJSON(manifest,function(result){
-    var m = new iiifManifest(manifest,result)
-    m.getURI()
-    var subset = m.getSubset(uri)
-    if(subset['@type']=="sc:Range") {
-      var iiifobj = new iiifRange(subset)
-    } else if(subset['@type']=="sc:Sequence") {
-      var iiifobj = new iiifSequence(subset)
+  // Class iiifSequence
+
+  function iiifSequence(data) {
+    this.data = data
+  }
+
+  iiifSequence.prototype.getCanvases = function() {
+    var retval = []
+    for(e in this.data['canvases']) {
+      retval.push(this.data['canvases'][e]['@id'])
     }
-    var canvases = iiifobj.getCanvases()
-    var doc = new pdfDoc(iiifobj,canvases,m)
-  })
-}
-
-// Class iiifRange
-
-function iiifRange(data) {
-  this.data = data
-}
-
-iiifRange.prototype.getCanvases = function() {
-  var retval = []
-  for(e in this.data['canvases']) {
-    retval.push(this.data['canvases'][e])
+    return retval
   }
-  return retval
-}
 
-// Class iiifSequence
+  // Class iiifManifest
 
-function iiifSequence(data) {
-  this.data = data
-}
-
-iiifSequence.prototype.getCanvases = function() {
-  var retval = []
-  for(e in this.data['canvases']) {
-    retval.push(this.data['canvases'][e]['@id'])
+  function iiifManifest(manifest, data) {
+    this.uri = manifest
+    this.data = data
   }
-  return retval
-}
 
-// Class iiifManifest
-
-function iiifManifest(manifest, data) {
-  this.uri = manifest
-  this.data = data
-}
-
-iiifManifest.prototype.getURI = function() {
-  console.log("Hello, I'm " + this.uri)
-  console.log(this.data['@id'])
-}
-
-iiifManifest.prototype.getSubset = function(uri) {
-  var subset = recSearch(uri, this.data)
-  // console.log(subset)
-  return subset
-}
-
-// Class iiifCanvas
-
-function iiifCanvas(data) {
-  this.data = data
-  this.img = null
-}
-
-iiifCanvas.prototype.getImage = function(pdfobj) {
-  var surl = this.data['images'][0]['resource']['service']['@id']
-  if(gui_selectres.value=="Max") {
-    var iurl = surl+"/full/full/0/default.jpg"
-  } else {
-    var iurl = surl+"/full/"+gui_selectres.value+",/0/default.jpg"
+  iiifManifest.prototype.getURI = function() {
+    console.log("Hello, I'm " + this.uri)
+    console.log(this.data['@id'])
   }
-  this.img = new Image
-  this.img.crossOrigin = "Anonymous"
-  this.img.onload = function() {
-    pdfobj.cd--
-    gui_progress.setAttribute("value",((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx)
-    if(pdfobj.cd==0) {
-      gui_btnsave.onclick=function(){pdfobj.savePDF()}
-      gui_btnsave.removeAttribute("disabled","true")
-      pdfobj.addImages()
+
+  iiifManifest.prototype.getSubset = function(uri) {
+    var subset = recSearch(uri, this.data)
+    // console.log(subset)
+    return subset
+  }
+
+  // Class iiifCanvas
+
+  function iiifCanvas(data) {
+    this.data = data
+    this.img = null
+  }
+
+  iiifCanvas.prototype.getImage = function(pdfobj) {
+    var surl = this.data['images'][0]['resource']['service']['@id']
+    if(gui_selectres.value=="Max") {
+      var iurl = surl+"/full/full/0/default.jpg"
+    } else {
+      var iurl = surl+"/full/"+gui_selectres.value+",/0/default.jpg"
     }
+    this.img = new Image
+    this.img.crossOrigin = "Anonymous"
+    this.img.onload = function() {
+      pdfobj.cd--
+      gui_progress.setAttribute("value",((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx)
+      if(pdfobj.cd==0) {
+        gui_btnsave.onclick=function(){pdfobj.savePDF()}
+        gui_btnsave.removeAttribute("disabled","true")
+        pdfobj.addImages()
+      }
+    }
+    this.img.src = iurl
   }
-  this.img.src = iurl
-}
 
-// Class docPDF
+  // Class docPDF
 
-function pdfDoc(o,canvases,m) {
-  this.canvases = canvases
-  this.canvobjs = []
-  this.cd = canvases.length
-  this.mx = canvases.length
-  this.document = new jsPDF()
-  var cursor = 20
+  function pdfDoc(o,canvases,m) {
+    this.canvases = canvases
+    this.canvobjs = []
+    this.cd = canvases.length
+    this.mx = canvases.length
+    this.document = new jsPDF()
+    var cursor = 20
 
-  this.document.setFontSize(16)
-  this.document.text(20, cursor, m.data['label'])
-  cursor+=8
-  this.document.setFontSize(14)
-  if('label' in o.data) {
-    this.document.text(20, cursor, o.data['label'])
-    cursor+=12
-  }
-  this.document.setFontSize(10)
-  this.document.text(20, cursor, m.data['@id'])
-  cursor+=8
-  this.document.text(20, cursor, m.data['attribution'])
-  cursor+=12
-  this.document.setFontSize(14)
-  this.document.text(20, cursor, "Metadaten")
-  this.document.setFontSize(10)
-  cursor+=12
-  for(md in m.data.metadata) {
-    this.document.text(20, cursor, m.data['metadata'][md]['label']+": "+m.data['metadata'][md]['value'])
+    this.document.setFontSize(16)
+    this.document.text(20, cursor, m.data['label'])
     cursor+=8
+    this.document.setFontSize(14)
+    if('label' in o.data) {
+      this.document.text(20, cursor, o.data['label'])
+      cursor+=12
+    }
+    this.document.setFontSize(10)
+    this.document.text(20, cursor, m.data['@id'])
+    cursor+=8
+    this.document.text(20, cursor, m.data['attribution'])
+    cursor+=8
+    this.document.text(20, cursor, m.data['license'])
+    cursor+=12
+    this.document.setFontSize(14)
+    this.document.text(20, cursor, "Metadaten")
+    this.document.setFontSize(10)
+    cursor+=12
+    for(md in m.data.metadata) {
+      var label = m.data['metadata'][md]['label']
+      this.document.text(20, cursor, label+": "+m.data['metadata'][md]['value'])
+      cursor+=8
+    }
+
+    for(c in canvases) {
+      var subset = m.getSubset(canvases[c])
+      var canvobj = new iiifCanvas(subset)
+      this.canvobjs.push(canvobj)
+      canvobj.getImage(this)
+    }
+
   }
 
-  for(c in canvases) {
-    var subset = m.getSubset(canvases[c])
-    var canvobj = new iiifCanvas(subset)
-    this.canvobjs.push(canvobj)
-    canvobj.getImage(this)
+  pdfDoc.prototype.savePDF = function() {
+    this.document.save("test.pdf")
   }
 
-}
-
-pdfDoc.prototype.savePDF = function() {
-  this.document.save("test.pdf")
-}
-
-pdfDoc.prototype.addImages = function() {
-  for(c in this.canvobjs) {
-    var width = this.document.internal.pageSize.width
-    var height = this.document.internal.pageSize.height
-    this.document.addPage()
-    this.document.addImage(this.canvobjs[c].img, 0, 0, width, height )
+  pdfDoc.prototype.addImages = function() {
+    for(c in this.canvobjs) {
+      var width = this.document.internal.pageSize.width
+      var height = this.document.internal.pageSize.height
+      this.document.addPage()
+      this.document.addImage(this.canvobjs[c].img, 0, 0, width, height )
+    }
   }
-}
-
-// Start
-
-
-
-
-
-
 
 
 }
