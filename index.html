@@ -11,25 +11,26 @@
 <!--
 
 Example 1: a Range
-manifest = "https://iiif.ub.uni-leipzig.de/0000002636/manifest.json"
-uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
+"manifest":"https://iiif.ub.uni-leipzig.de/0000002636/manifest.json",
+"uri":"https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15",
 
 Example 2: a Sequence
-manifest = "https://iiif.ub.uni-leipzig.de/0000009359/manifest.json"
-uri = "https://iiif.ub.uni-leipzig.de/0000009359/sequence/1"
+"manifest":"https://iiif.ub.uni-leipzig.de/0000009359/manifest.json",
+"uri":"https://iiif.ub.uni-leipzig.de/0000009359/sequence/1",
 
 Example 3: a CORS Error :-)
-manifest = "https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/manifest.json"
-uri = "https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/range/r0-0"
+"manifest":"https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/manifest.json",
+"uri":"https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/range/r0-0",
 
 https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00032719/manifest
 https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00032719/sequences/normal
 
-https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00014488/manifest
-https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00014488/sequences/normal
 
 "manifest":"https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00014488/manifest",
 "uri":"https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00014488/sequences/normal",
+
+"manifest":"https://iiif.lib.harvard.edu/manifests/drs:46909368",
+"uri":"https://iiif.lib.harvard.edu/manifests/drs:46909368/range/range-1.json",
 
 -->
 
@@ -37,8 +38,8 @@ https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00014488/sequences/no
 <script>
   var myWidget = new iiif2pdf({
     "div_id":"suoa",
-    "manifest":"https://iiif.ub.uni-leipzig.de/0000002636/manifest.json",
-    "uri":"https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15",
+    "manifest":"https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00014488/manifest",
+    "uri":"https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00014488/sequences/normal",
     "resolution":"1024",
     "mode":"gui"
   })

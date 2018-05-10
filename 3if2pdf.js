@@ -31,7 +31,7 @@ function iiif2pdf(config) {
         var option = document.createElement("option")
         option.value = array[i]
         option.text = array[i]
-        if(array[i]=="1024") {
+        if(array[i]==config["resolution"]) {
           option.setAttribute("selected",true)
         }
         gui_selectres.appendChild(option)
@@ -175,16 +175,22 @@ function iiif2pdf(config) {
   // Class docPDF
 
   function pdfDoc(o,canvases,m) {
+
+    var margin=20; //margin in mm
+    var pdfInMM=210;  // width of A4 in mm
+
     this.canvases = canvases
     this.canvobjs = []
     this.cd = canvases.length
     this.mx = canvases.length
-    this.document = new jsPDF()
+    this.document = new jsPDF("p","mm","a4")
     var cursor = 20
 
     this.document.setFontSize(16)
-    this.document.text(20, cursor, m.data['label'])
-    cursor+=8
+    var lines = this.document.splitTextToSize(m.data['label'], (pdfInMM-margin-margin));
+    this.document.text(margin,20,lines);
+
+    cursor+=8*lines.length
     this.document.setFontSize(14)
     if('label' in o.data) {
       this.document.text(20, cursor, o.data['label'])
@@ -192,8 +198,10 @@ function iiif2pdf(config) {
     }
     this.document.setFontSize(10)
     this.document.text(20, cursor, m.data['@id'])
-    cursor+=8
-    this.document.text(20, cursor, m.data['attribution'])
+    if('attribution' in m.data) {
+      cursor+=8
+      this.document.text(20, cursor, m.data['attribution'])
+    }
     cursor+=8
     this.document.text(20, cursor, m.data['license'])
     cursor+=12
