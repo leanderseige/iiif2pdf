@@ -4,6 +4,12 @@
 
 // Global Variables
 
+// var manifest = "https://iiif.ub.uni-leipzig.de/0000009283/manifest.json"
+// var uri = "https://iiif.ub.uni-leipzig.de/0000009283/range/LOG_0009"
+
+var manifest = "https://iiif.ub.uni-leipzig.de/0000002636/manifest.json"
+var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
+
 // Function
 
 function recSearch(uri,data) {
@@ -21,6 +27,18 @@ function recSearch(uri,data) {
     }
     return retval
   }
+
+function createPDF() {
+  $("#buttoncr").button({disabled: true});
+  $.getJSON(manifest,function(result){
+    var m = new iiifManifest(manifest,result)
+    m.getURI()
+    var subset = m.getSubset(uri)
+    var iiifobj = new iiifRange(subset)
+    var canvases = iiifobj.getCanvases()
+    var doc = new pdfDoc(canvases,m)
+  })
+}
 
 // Class iiifRange
 
@@ -77,9 +95,8 @@ iiifCanvas.prototype.addImage = function(pdfobj) {
     console.log(pdfobj.cd)
     $("#progressbar").progressbar({value: ((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx});
     if(pdfobj.cd==0) {
-      $("#buttondl").click(function(){
-            pdfobj.savePDF()
-        })
+      $("#buttonsv").button({disabled: false});
+      $("#buttonsv").click(function(){pdfobj.savePDF()})
     }
   };
   this.img.src = iurl;
@@ -107,24 +124,10 @@ pdfDoc.prototype.savePDF = function() {
 
 // Start
 
-$("#progressbar").progressbar()
-$("#buttondl").prop('disabled', true);
-
 $(document).ready(function () {
-  // var manifest = "https://iiif.ub.uni-leipzig.de/0000009283/manifest.json"
-  // var uri = "https://iiif.ub.uni-leipzig.de/0000009283/range/LOG_0009"
-  
-  var manifest = "https://iiif.ub.uni-leipzig.de/0000002636/manifest.json"
-  var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
 
-  $.getJSON(manifest,function(result){
-    var m = new iiifManifest(manifest,result)
-    m.getURI()
-    var subset = m.getSubset(uri)
-    var iiifobj = new iiifRange(subset)
-    var canvases = iiifobj.getCanvases()
-    var doc = new pdfDoc(canvases,m)
-  })
-
+  $("#progressbar").progressbar()
+  $("#buttonsv").button({disabled: true});
+  $("#buttoncr").click(function(){createPDF()})
 
 })
