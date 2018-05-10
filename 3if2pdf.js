@@ -7,8 +7,13 @@
 // var manifest = "https://iiif.ub.uni-leipzig.de/0000009283/manifest.json"
 // var uri = "https://iiif.ub.uni-leipzig.de/0000009283/range/LOG_0009"
 
+// Example 1: a Range
 var manifest = "https://iiif.ub.uni-leipzig.de/0000002636/manifest.json"
 var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
+
+// Example 2: a Sequence
+// var manifest = "https://iiif.ub.uni-leipzig.de/0000009359/manifest.json"
+// var uri = "https://iiif.ub.uni-leipzig.de/0000009359/sequence/1"
 
 // var manifest = "https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/manifest.json"
 // var uri = "https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/range/r0-0"
@@ -37,8 +42,11 @@ function createPDF() {
     var m = new iiifManifest(manifest,result)
     m.getURI()
     var subset = m.getSubset(uri)
-
-    var iiifobj = new iiifRange(subset)
+    if(subset['@type']=="sc:Range") {
+      var iiifobj = new iiifRange(subset)
+    } else if(subset['@type']=="sc:Sequence") {
+      var iiifobj = new iiifSequence(subset)
+    }
     var canvases = iiifobj.getCanvases()
     var doc = new pdfDoc(iiifobj,canvases,m)
   })
@@ -129,9 +137,11 @@ function pdfDoc(o,canvases,m) {
   this.document.text(20, cursor, m.data['label'])
   cursor+=8
   this.document.setFontSize(14)
-  this.document.text(20, cursor, o.data['label'])
+  if('label' in o.data) {
+    this.document.text(20, cursor, o.data['label'])
+    cursor+=12
+  }
   this.document.setFontSize(10)
-  cursor+=12
   this.document.text(20, cursor, m.data['@id'])
   cursor+=8
   this.document.text(20, cursor, m.data['attribution'])
@@ -170,10 +180,8 @@ pdfDoc.prototype.addImages = function() {
 // Start
 
 $(document).ready(function () {
-
   $("#slider").slider()
   $("#progressbar").progressbar()
   $("#buttonsv").button({disabled: true});
   $("#buttoncr").click(function(){createPDF()})
-
 })
