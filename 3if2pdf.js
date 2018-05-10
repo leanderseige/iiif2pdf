@@ -67,14 +67,15 @@ iiifCanvas.prototype.addImage = function(pdfobj) {
   this.img.onload = function() {
     var width = pdfobj.document.internal.pageSize.width;
     var height = pdfobj.document.internal.pageSize.height
-    if(pdfobj.countdown!=pdfobj.canvases.length) {
+    if(pdfobj.cd!=pdfobj.mx) {
       pdfobj.document.addPage()
     }
     pdfobj.document.addImage(this, 0, 0, width, height  );
-    pdfobj.countdown--
-    console.log(pdfobj.countdown)
-    if(pdfobj.countdown==0) {
-      pdfobj.document.save("test.pdf")
+    pdfobj.cd--
+    console.log(pdfobj.cd)
+    $("#progressbar").progressbar({value: ((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx});
+    if(pdfobj.cd==0) {
+      // pdfobj.document.save("test.pdf")
     }
   };
   this.img.src = iurl;
@@ -84,7 +85,8 @@ iiifCanvas.prototype.addImage = function(pdfobj) {
 
 function pdfDoc(canvases,m) {
   this.canvases = canvases
-  this.countdown = canvases.length
+  this.cd = canvases.length
+  this.mx = canvases.length
   this.document = new jsPDF()
 
   for(c in canvases) {
@@ -96,6 +98,9 @@ function pdfDoc(canvases,m) {
 }
 
 // Start
+
+$("#progressbar").progressbar()
+$("#buttondl").button("disable");
 
 $(document).ready(function () {
   // var manifest = "https://iiif.ub.uni-leipzig.de/0000009283/manifest.json"
