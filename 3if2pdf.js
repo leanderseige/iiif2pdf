@@ -2,6 +2,9 @@
  * (c) Leander Seige, 2018, GPL Version 3, leander@seige.name
  */
 
+
+function iiif2pdfDoc(config) {
+
 // Global Variables
 
 // var manifest = "https://iiif.ub.uni-leipzig.de/0000009283/manifest.json"
@@ -18,7 +21,36 @@ var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
 // var manifest = "https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/manifest.json"
 // var uri = "https://digi.vatlib.it/iiif/MSS_Vat.lat.3225/range/r0-0"
 
+
 // Function
+
+var gui_progress
+var gui_btnsave
+var gui_btncreate
+
+$(document).ready(function () {
+
+  var divid = document.getElementById(config["div_id"])
+
+  gui_progress = document.createElement("progress")
+  gui_progress.setAttribute("value", "0")
+  gui_progress.setAttribute("max", "100")
+  divid.appendChild(gui_progress)
+
+  gui_btncreate = document.createElement("button")
+  var create_txt = document.createTextNode("Create PDF")
+  gui_btncreate.appendChild(create_txt)
+  divid.appendChild(gui_btncreate)
+  gui_btncreate.onclick=function(){createPDF()}
+
+  gui_btnsave = document.createElement("button")
+  gui_btnsave.setAttribute("disabled","true")
+  var save_txt = document.createTextNode("Save PDF")
+  gui_btnsave.appendChild(save_txt)
+  divid.appendChild(gui_btnsave)
+
+})
+
 
 function recSearch(uri,data) {
   var retval = false
@@ -37,7 +69,7 @@ function recSearch(uri,data) {
   }
 
 function createPDF() {
-  $("#buttoncr").button({disabled: true});
+  gui_btncreate.setAttribute("disabled","true")
   $.getJSON(manifest,function(result){
     var m = new iiifManifest(manifest,result)
     m.getURI()
@@ -108,19 +140,18 @@ function iiifCanvas(data) {
 iiifCanvas.prototype.getImage = function(pdfobj) {
   var surl = this.data['images'][0]['resource']['service']['@id']
   var iurl = surl+"/full/1024,/0/default.jpg"
-  this.img = new Image;
-  this.img.crossOrigin = "Anonymous";
+  this.img = new Image
+  this.img.crossOrigin = "Anonymous"
   this.img.onload = function() {
     pdfobj.cd--
-    // console.log(pdfobj.cd)
-    $("#progressbar").progressbar({value: ((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx});
+    gui_progress.setAttribute("value",((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx)
     if(pdfobj.cd==0) {
-      $("#buttonsv").click(function(){pdfobj.savePDF()})
-      $("#buttonsv").button({disabled: false});
+      gui_btnsave.onclick=function(){pdfobj.savePDF()}
+      gui_btnsave.removeAttribute("disabled","true")
       pdfobj.addImages()
     }
   }
-  this.img.src = iurl;
+  this.img.src = iurl
 }
 
 // Class docPDF
@@ -131,7 +162,7 @@ function pdfDoc(o,canvases,m) {
   this.cd = canvases.length
   this.mx = canvases.length
   this.document = new jsPDF()
-  var cursor = 20;
+  var cursor = 20
 
   this.document.setFontSize(16)
   this.document.text(20, cursor, m.data['label'])
@@ -170,18 +201,20 @@ pdfDoc.prototype.savePDF = function() {
 
 pdfDoc.prototype.addImages = function() {
   for(c in this.canvobjs) {
-    var width = this.document.internal.pageSize.width;
+    var width = this.document.internal.pageSize.width
     var height = this.document.internal.pageSize.height
     this.document.addPage()
-    this.document.addImage(this.canvobjs[c].img, 0, 0, width, height );
+    this.document.addImage(this.canvobjs[c].img, 0, 0, width, height )
   }
 }
 
 // Start
 
-$(document).ready(function () {
-  $("#slider").slider()
-  $("#progressbar").progressbar()
-  $("#buttonsv").button({disabled: true});
-  $("#buttoncr").click(function(){createPDF()})
-})
+
+
+
+
+
+
+
+}
