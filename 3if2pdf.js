@@ -97,24 +97,21 @@ function iiifCanvas(data) {
   this.img = null
 }
 
-iiifCanvas.prototype.addImage = function(pdfobj) {
+iiifCanvas.prototype.getImage = function(pdfobj) {
   var surl = this.data['images'][0]['resource']['service']['@id']
   var iurl = surl+"/full/1024,/0/default.jpg"
   this.img = new Image;
   this.img.crossOrigin = "Anonymous";
   this.img.onload = function() {
-    var width = pdfobj.document.internal.pageSize.width;
-    var height = pdfobj.document.internal.pageSize.height
-    pdfobj.document.addPage()
-    pdfobj.document.addImage(this, 0, 0, width, height  );
     pdfobj.cd--
-    console.log(pdfobj.cd)
+    // console.log(pdfobj.cd)
     $("#progressbar").progressbar({value: ((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx});
     if(pdfobj.cd==0) {
-      $("#buttonsv").button({disabled: false});
       $("#buttonsv").click(function(){pdfobj.savePDF()})
+      $("#buttonsv").button({disabled: false});
+      pdfobj.addImages()
     }
-  };
+  }
   this.img.src = iurl;
 }
 
@@ -122,6 +119,7 @@ iiifCanvas.prototype.addImage = function(pdfobj) {
 
 function pdfDoc(o,canvases,m) {
   this.canvases = canvases
+  this.canvobjs = []
   this.cd = canvases.length
   this.mx = canvases.length
   this.document = new jsPDF()
@@ -150,7 +148,8 @@ function pdfDoc(o,canvases,m) {
   for(c in canvases) {
     var subset = m.getSubset(canvases[c])
     var canvobj = new iiifCanvas(subset)
-    var image = canvobj.addImage(this)
+    this.canvobjs.push(canvobj)
+    canvobj.getImage(this)
   }
 
 }
@@ -159,10 +158,20 @@ pdfDoc.prototype.savePDF = function() {
   this.document.save("test.pdf")
 }
 
+pdfDoc.prototype.addImages = function() {
+  for(c in this.canvobjs) {
+    var width = this.document.internal.pageSize.width;
+    var height = this.document.internal.pageSize.height
+    this.document.addPage()
+    this.document.addImage(this.canvobjs[c].img, 0, 0, width, height );
+  }
+}
+
 // Start
 
 $(document).ready(function () {
 
+  $("#slider").slider()
   $("#progressbar").progressbar()
   $("#buttonsv").button({disabled: true});
   $("#buttoncr").click(function(){createPDF()})
