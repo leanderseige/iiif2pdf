@@ -9,7 +9,12 @@
 <body>
 <div id="suoa"></div>
 <script>
-  var run = new iiif2pdfDoc({"div_id":"suoa"})
+  var myWidget = new iiif2pdf({
+    "div_id":"suoa",
+    "manifest":"suoa",
+    "uri":"suoa",
+    "mode":"gui"
+  })
 </script>
 </body>
 </html>

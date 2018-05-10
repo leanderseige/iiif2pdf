@@ -3,7 +3,7 @@
  */
 
 
-function iiif2pdfDoc(config) {
+function iiif2pdf(config) {
 
 // Global Variables
 
@@ -27,10 +27,24 @@ var uri = "https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"
 var gui_progress
 var gui_btnsave
 var gui_btncreate
+var gui_rangeres
+var gui_displayres
 
 $(document).ready(function () {
 
   var divid = document.getElementById(config["div_id"])
+
+  gui_rangeres = document.createElement("input");
+  gui_rangeres.setAttribute("type", "range");
+  gui_rangeres.setAttribute("min", "0");
+  gui_rangeres.setAttribute("max", "100");
+  gui_rangeres.setAttribute("value", "100");
+  divid.appendChild(gui_rangeres)
+
+  gui_displayres = document.createElement("input");
+  gui_displayres.setAttribute("type", "text");
+  gui_displayres.setAttribute("value", "100");
+  divid.appendChild(gui_displayres)
 
   gui_progress = document.createElement("progress")
   gui_progress.setAttribute("value", "0")
