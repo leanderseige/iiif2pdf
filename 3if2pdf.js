@@ -15,12 +15,19 @@ function iiif2pdf(config) {
   var manifest
   var uri
 
+  var setup = {
+    "id":"myWidget",
+    "resolution":"1024",
+    "mode":"gui"
+  }
+
   $(document).ready(function () {
 
-    var divid = document.getElementById(config["div_id"])
+    for(c in config) {
+      setup[c]=config[c]
+    }
 
-    manifest = config["manifest"]
-    uri = config["uri"]
+    var divid = document.getElementById(setup["id"])
 
     var array = ["Max","2048","1024","512"]
 
@@ -84,10 +91,10 @@ function iiif2pdf(config) {
   function createPDF() {
     gui_btncreate.setAttribute("disabled","true")
     gui_selectres.setAttribute("disabled","true")
-    $.getJSON(manifest,function(result){
-      var m = new iiifManifest(manifest,result)
+    $.getJSON(setup["manifest"],function(result){
+      var m = new iiifManifest(setup["manifest"],result)
       m.getURI()
-      var subset = m.getSubset(uri)
+      var subset = m.getSubset(setup["uri"])
       if(subset['@type']=="sc:Range") {
         var iiifobj = new iiifRange(subset)
       } else if(subset['@type']=="sc:Sequence") {
@@ -202,8 +209,10 @@ function iiif2pdf(config) {
       cursor+=8
       this.document.text(20, cursor, m.data['attribution'])
     }
-    cursor+=8
-    this.document.text(20, cursor, m.data['license'])
+    if('license' in m.data) {
+      cursor+=8
+      this.document.text(20, cursor, m.data['license'])
+    }
     cursor+=12
     this.document.setFontSize(14)
     this.document.text(20, cursor, "Metadaten")
