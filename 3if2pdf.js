@@ -36,6 +36,7 @@ function iiif2pdf(config) {
     var btns
     var btnc
     var selr
+    var stat
 
     var m
 
@@ -74,6 +75,11 @@ function iiif2pdf(config) {
     this.btns.appendChild(save_txt)
     divid.appendChild(this.btns)
 
+    this.stat = document.createElement("input")
+    this.stat.setAttribute("readonly","true")
+    this.stat.setAttribute("type", "text")
+    this.stat.setAttribute("value", "Status")
+    divid.appendChild(this.stat)
   }
 
   controllerGUI.prototype.loadData = function() {
@@ -179,17 +185,13 @@ function iiif2pdf(config) {
   function iiifManifest() {
     var manifest = this
     $.getJSON(setup["manifest"], function(result  ) {
-      console.log(result)
-      console.log(manifest.data)
       manifest.data = result
-      console.log(manifest.data)
       ctrl.parseData()
     })
   }
 
   iiifManifest.prototype.parseManifest = function() {
     var subset = this.getSubset(setup["uri"])
-    console.log(subset)
     if(subset['@type']=="sc:Range") {
       var iiifobj = new iiifRange(subset)
     } else if(subset['@type']=="sc:Sequence") {
@@ -205,7 +207,6 @@ function iiif2pdf(config) {
   }
 
   iiifManifest.prototype.getSubset = function(uri) {
-    console.log(this.data)
     var subset = this.recSearch(uri, this.data)
     return subset
   }
