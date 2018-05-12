@@ -7,13 +7,7 @@
 
 function iiif2pdf(config) {
 
-  var gui_progress
-  var gui_btnsave
-  var gui_btncreate
-  var gui_selectres
-
-  var manifest
-  var uri
+  var ctrl
 
   var setup = {
     "id":"myWidget",
@@ -22,17 +16,36 @@ function iiif2pdf(config) {
   }
 
   $(document).ready(function () {
-
     for(c in config) {
       setup[c]=config[c]
     }
+    switch(setup['mode']) {
+      case 'gui':
+        ctrl = new controllerGUI()
+        break;
+      case 'auto':
+        ctrl = new controllerAuto()
+        break;
+    }
+  })
+
+  // Class controllerGUI
+
+  function controllerGUI() {
+    var prog
+    var btns
+    var btnc
+    var selr
+
+    var m
 
     var divid = document.getElementById(setup["id"])
 
     var array = ["Max","2048","1024","512"]
 
-    gui_selectres = document.createElement("select")
-    divid.appendChild(gui_selectres)
+    this.selr = document.createElement("select")
+    this.selr.onchange=function() { setup['resolution']=ctrl.selr.value }
+    divid.appendChild(this.selr)
 
     for (var i = 0; i < array.length; i++) {
         var option = document.createElement("option")
@@ -41,68 +54,96 @@ function iiif2pdf(config) {
         if(array[i]==config["resolution"]) {
           option.setAttribute("selected",true)
         }
-        gui_selectres.appendChild(option)
+        this.selr.appendChild(option)
     }
 
-    gui_progress = document.createElement("progress")
-    gui_progress.setAttribute("value", "0")
-    gui_progress.setAttribute("max", "100")
-    divid.appendChild(gui_progress)
+    this.prog = document.createElement("progress")
+    this.prog.setAttribute("value", "0")
+    this.prog.setAttribute("max", "100")
+    divid.appendChild(this.prog)
 
-    gui_btncreate = document.createElement("button")
+    this.btnc = document.createElement("button")
     var create_txt = document.createTextNode("Create PDF")
-    gui_btncreate.appendChild(create_txt)
-    divid.appendChild(gui_btncreate)
-    gui_btncreate.onclick=function(){createPDF()}
+    this.btnc.appendChild(create_txt)
+    divid.appendChild(this.btnc)
+    this.btnc.onclick=function(){ctrl.loadData()}
 
-    gui_btnsave = document.createElement("button")
-    gui_btnsave.setAttribute("disabled","true")
+    this.btns = document.createElement("button")
+    this.btns.setAttribute("disabled","true")
     var save_txt = document.createTextNode("Save PDF")
-    gui_btnsave.appendChild(save_txt)
-    divid.appendChild(gui_btnsave)
+    this.btns.appendChild(save_txt)
+    divid.appendChild(this.btns)
 
-  })
-
-  // GUI Callbacks
-
-  function guicb_res() {
-    var value = gui_rangeres.value
-    gui_displayres.value = value
   }
 
-  // Misc Functions
+  controllerGUI.prototype.loadData = function() {
+    this.btnc.setAttribute("disabled","true")
+    this.selr.setAttribute("disabled","true")
+    this.m = new iiifManifest()
+  }
 
-  function recSearch(uri,data) {
-    var retval = false
-    for(e in data) {
-        if(data[e] instanceof Object ) {
-          if('@id' in data[e]) {
-            if(data[e]['@id'] == uri) {
-              return data[e]
-            }
-          }
-          retval = recSearch(uri,data[e])
-          if(retval!=false) return retval
-        }
-      }
-      return retval
+  controllerGUI.prototype.parseData = function() {
+    this.m.parseManifest()
+  }
+
+  controllerGUI.prototype.getImageSuffix = function() {
+    if(setup['resolution']=="Max") {
+      return "/full/full/0/default.jpg"
+    } else {
+      return "/full/"+setup['resolution']+",/0/default.jpg"
     }
+  }
 
-  function createPDF() {
-    gui_btncreate.setAttribute("disabled","true")
-    gui_selectres.setAttribute("disabled","true")
-    $.getJSON(setup["manifest"],function(result){
-      var m = new iiifManifest(setup["manifest"],result)
-      m.getURI()
-      var subset = m.getSubset(setup["uri"])
-      if(subset['@type']=="sc:Range") {
-        var iiifobj = new iiifRange(subset)
-      } else if(subset['@type']=="sc:Sequence") {
-        var iiifobj = new iiifSequence(subset)
-      }
-      var canvases = iiifobj.getCanvases()
-      var doc = new pdfDoc(iiifobj,canvases,m)
-    })
+  controllerGUI.prototype.updateProgressbar = function(value) {
+    this.prog.setAttribute("value",value)
+  }
+
+  controllerGUI.prototype.createPDF = function(pdfobj) {
+    pdfobj.addImages()
+    this.btns.onclick=function(){pdfobj.savePDF()}
+    this.btns.removeAttribute("disabled","true")
+  }
+
+  // Class controllerAuto
+
+  function controllerAuto() {
+    var prog
+
+    var m
+
+    var divid = document.getElementById(setup["id"])
+
+    this.prog = document.createElement("progress")
+    this.prog.setAttribute("value", "0")
+    this.prog.setAttribute("max", "100")
+    divid.appendChild(this.prog)
+
+    this.loadData()
+  }
+
+  controllerAuto.prototype.loadData = function() {
+    this.m = new iiifManifest()
+  }
+
+  controllerAuto.prototype.parseData = function() {
+    this.m.parseManifest()
+  }
+
+  controllerAuto.prototype.getImageSuffix = function() {
+    if(setup['resolution']=="Max") {
+      return "/full/full/0/default.jpg"
+    } else {
+      return "/full/"+setup['resolution']+",/0/default.jpg"
+    }
+  }
+
+  controllerAuto.prototype.updateProgressbar = function(value) {
+    this.prog.setAttribute("value",value)
+  }
+
+  controllerAuto.prototype.createPDF = function(pdfobj) {
+    pdfobj.addImages()
+    pdfobj.savePDF()
   }
 
   // Class iiifRange
@@ -135,9 +176,27 @@ function iiif2pdf(config) {
 
   // Class iiifManifest
 
-  function iiifManifest(manifest, data) {
-    this.uri = manifest
-    this.data = data
+  function iiifManifest() {
+    var manifest = this
+    $.getJSON(setup["manifest"], function(result  ) {
+      console.log(result)
+      console.log(manifest.data)
+      manifest.data = result
+      console.log(manifest.data)
+      ctrl.parseData()
+    })
+  }
+
+  iiifManifest.prototype.parseManifest = function() {
+    var subset = this.getSubset(setup["uri"])
+    console.log(subset)
+    if(subset['@type']=="sc:Range") {
+      var iiifobj = new iiifRange(subset)
+    } else if(subset['@type']=="sc:Sequence") {
+      var iiifobj = new iiifSequence(subset)
+    }
+    var canvases = iiifobj.getCanvases()
+    var doc = new pdfDoc(iiifobj,canvases,this)
   }
 
   iiifManifest.prototype.getURI = function() {
@@ -146,10 +205,26 @@ function iiif2pdf(config) {
   }
 
   iiifManifest.prototype.getSubset = function(uri) {
-    var subset = recSearch(uri, this.data)
-    // console.log(subset)
+    console.log(this.data)
+    var subset = this.recSearch(uri, this.data)
     return subset
   }
+
+  iiifManifest.prototype.recSearch = function(uri,data) {
+      var retval = false
+      for(e in data) {
+        if(data[e] instanceof Object ) {
+          if('@id' in data[e]) {
+            if(data[e]['@id'] == uri) {
+              return data[e]
+            }
+          }
+          retval = this.recSearch(uri,data[e])
+          if(retval!=false) return retval
+        }
+      }
+      return retval
+    }
 
   // Class iiifCanvas
 
@@ -160,20 +235,14 @@ function iiif2pdf(config) {
 
   iiifCanvas.prototype.getImage = function(pdfobj) {
     var surl = this.data['images'][0]['resource']['service']['@id']
-    if(gui_selectres.value=="Max") {
-      var iurl = surl+"/full/full/0/default.jpg"
-    } else {
-      var iurl = surl+"/full/"+gui_selectres.value+",/0/default.jpg"
-    }
+    var iurl = surl+ctrl.getImageSuffix()
     this.img = new Image
     this.img.crossOrigin = "Anonymous"
     this.img.onload = function() {
       pdfobj.cd--
-      gui_progress.setAttribute("value",((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx)
+      ctrl.updateProgressbar(((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx)
       if(pdfobj.cd==0) {
-        gui_btnsave.onclick=function(){pdfobj.savePDF()}
-        gui_btnsave.removeAttribute("disabled","true")
-        pdfobj.addImages()
+        ctrl.createPDF(pdfobj)
       }
     }
     this.img.src = iurl
@@ -245,6 +314,5 @@ function iiif2pdf(config) {
       this.document.addImage(this.canvobjs[c].img, 0, 0, width, height )
     }
   }
-
 
 }
