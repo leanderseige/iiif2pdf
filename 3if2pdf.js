@@ -196,7 +196,10 @@ function iiif2pdf(config) {
       var iiifobj = new iiifRange(subset)
     } else if(subset['@type']=="sc:Sequence") {
       var iiifobj = new iiifSequence(subset)
+    } else if(subset['@type']=="sc:Canvas") {
+      var iiifobj = new iiifCanvas(subset)
     }
+
     var canvases = iiifobj.getCanvases()
     var doc = new pdfDoc(iiifobj,canvases,this)
   }
@@ -232,6 +235,12 @@ function iiif2pdf(config) {
   function iiifCanvas(data) {
     this.data = data
     this.img = null
+  }
+
+  iiifCanvas.prototype.getCanvases = function() {
+    var retval = []
+    retval.push(this.data['@id'])
+    return retval
   }
 
   iiifCanvas.prototype.getImage = function(pdfobj) {
