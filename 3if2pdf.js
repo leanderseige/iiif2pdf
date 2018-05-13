@@ -12,7 +12,8 @@ function iiif2pdf(config) {
   var setup = {
     "id":"myWidget",
     "resolution":"1024",
-    "mode":"gui"
+    "mode":"gui",
+    "resolutions" : ["Max","2048","1024","512"]
   }
 
   $(document).ready(function () {
@@ -42,17 +43,15 @@ function iiif2pdf(config) {
 
     var divid = document.getElementById(setup["id"])
 
-    var array = ["Max","2048","1024","512"]
-
     this.selr = document.createElement("select")
     this.selr.onchange=function() { setup['resolution']=ctrl.selr.value }
     divid.appendChild(this.selr)
 
-    for (var i = 0; i < array.length; i++) {
+    for (var i = 0; i < setup.resolutions.length; i++) {
         var option = document.createElement("option")
-        option.value = array[i]
-        option.text = array[i]
-        if(array[i]==config["resolution"]) {
+        option.value = setup.resolutions[i]
+        option.text = setup.resolutions[i]
+        if(setup.resolutions[i]==config["resolution"]) {
           option.setAttribute("selected",true)
         }
         this.selr.appendChild(option)
