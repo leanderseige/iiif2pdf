@@ -318,10 +318,21 @@ function iiif2pdf(config) {
 
   pdfDoc.prototype.addImages = function() {
     for(c in this.canvobjs) {
-      var width = this.document.internal.pageSize.width
-      var height = this.document.internal.pageSize.height
+      var pw = this.document.internal.pageSize.width
+      var ph = this.document.internal.pageSize.height
+      var iw = this.canvobjs[c].img.naturalWidth
+      var ih = this.canvobjs[c].img.naturalHeight
+      var pr = pw/ph
+      var ir = iw/ih
+      if(pr<ir) {
+        var w = pw
+        var h = pw/ir
+      } else {
+        var h = ph
+        var w = ph*ir
+      }
       this.document.addPage()
-      this.document.addImage(this.canvobjs[c].img, 0, 0, width, height )
+      this.document.addImage(this.canvobjs[c].img, (pw-w)/2, (ph-h)/2, w, h )
     }
   }
 
