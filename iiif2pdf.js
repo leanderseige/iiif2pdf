@@ -13,7 +13,12 @@ function iiif2pdf(config) {
     "id":"myWidget",
     "resolution":"1024",
     "mode":"gui",
-    "resolutions" : ["Max","2048","1024","512"]
+    "resolutions" : ["Max","2048","1024","512"],
+    "orientation" : "portrait",
+    "orientations": ["portrait","landscape"],
+    "format":"a4",
+    "formats":["a4","letter","legal","a3"],
+    "quality":0.8
   }
 
   $(document).ready(function () {
@@ -315,6 +320,17 @@ function iiif2pdf(config) {
     this.document.save("test.pdf")
   }
 
+  pdfDoc.prototype.reencodeImg = function(img,q) {
+    var canvas = document.createElement('canvas')
+    canvas.id     = "delme"
+    canvas.width  = img.naturalWidth
+    canvas.height = img.naturalHeight
+    var ctx = canvas.getContext("2d")
+    ctx.drawImage(img,0,0)
+    var retimg = canvas.toDataURL('image/jpeg',q)
+    return retimg
+  }
+
   pdfDoc.prototype.addImages = function() {
     for(c in this.canvobjs) {
       var pw = this.document.internal.pageSize.width
@@ -331,7 +347,8 @@ function iiif2pdf(config) {
         var w = ph*ir
       }
       this.document.addPage()
-      this.document.addImage(this.canvobjs[c].img, (pw-w)/2, (ph-h)/2, w, h )
+      // this.document.addImage(this.canvobjs[c].img, (pw-w)/2, (ph-h)/2, w, h )
+      this.document.addImage(this.reencodeImg(this.canvobjs[c].img,1.0), (pw-w)/2, (ph-h)/2, w, h )
     }
   }
 
