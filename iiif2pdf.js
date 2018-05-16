@@ -18,7 +18,7 @@ function iiif2pdf(config) {
     "orientations": ["portrait","landscape"],
     "format":"a4",
     "formats":["a4","letter","legal","a3"],
-    "quality":0.8
+    "quality":0.72
   }
 
   $(document).ready(function () {
@@ -348,7 +348,7 @@ function iiif2pdf(config) {
       }
       this.document.addPage()
       // this.document.addImage(this.canvobjs[c].img, (pw-w)/2, (ph-h)/2, w, h )
-      this.document.addImage(this.reencodeImg(this.canvobjs[c].img,1.0), (pw-w)/2, (ph-h)/2, w, h )
+      this.document.addImage(this.reencodeImg(this.canvobjs[c].img,setup["quality"]), (pw-w)/2, (ph-h)/2, w, h )
     }
   }
 
