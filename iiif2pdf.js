@@ -18,7 +18,7 @@ function iiif2pdf(config) {
     "orientations": ["portrait","landscape"],
     "format":"a4",
     "formats":["a4","letter","legal","a3"],
-    "quality":0.72
+    "quality":0.7
   }
 
   $(document).ready(function () {
@@ -42,14 +42,25 @@ function iiif2pdf(config) {
     var btns
     var btnc
     var selr
+    var selq
     var stat
 
     var m
 
+    var tmp
+
     var divid = document.getElementById(setup["id"])
 
+    tmp = document.createElement("label")
+    tmp.setAttribute("for", "iiif2pdf_selr")
+    tmp.classList.add("iiif2pdf");
+    tmp.innerHTML="Select Resolution"
+    divid.appendChild(tmp)
+
     this.selr = document.createElement("select")
+    this.selr.setAttribute("id", "iiif2pdf_selr")
     this.selr.onchange=function() { setup['resolution']=ctrl.selr.value }
+    this.selr.classList.add("iiif2pdf");
     divid.appendChild(this.selr)
 
     for (var i = 0; i < setup.resolutions.length; i++) {
@@ -62,14 +73,38 @@ function iiif2pdf(config) {
         this.selr.appendChild(option)
     }
 
-    this.prog = document.createElement("progress")
-    this.prog.setAttribute("value", "0")
-    this.prog.setAttribute("max", "100")
-    divid.appendChild(this.prog)
+    divid.appendChild(document.createElement("br"))
+
+    tmp = document.createElement("label")
+    tmp.setAttribute("for", "iiif2pdf_selq")
+    tmp.classList.add("iiif2pdf");
+    tmp.innerHTML="Select Quality"
+    divid.appendChild(tmp)
+
+    this.selq = document.createElement("input")
+    this.selq.setAttribute("id", "iiif2pdf_selq")
+    this.selq.setAttribute("type", "range")
+    this.selq.setAttribute("min", "10")
+    this.selq.setAttribute("max", "100")
+    this.selq.setAttribute("value", setup['quality']*100)
+    this.selq.classList.add("iiif2pdf");
+    this.selq.oninput=function() {
+      setup['quality']=ctrl.selq.value/100
+      ctrl.quad.innerHTML=setup['quality']
+    }
+    this.quad = document.createElement("span")
+    this.quad.setAttribute("id", "iiif2pdf_quad")
+    this.quad.classList.add("iiif2pdf");
+    this.quad.innerHTML=setup['quality']
+    divid.appendChild(this.selq)
+    divid.appendChild(this.quad)
+
+    divid.appendChild(document.createElement("br"))
 
     this.btnc = document.createElement("button")
     var create_txt = document.createTextNode("Create PDF")
     this.btnc.appendChild(create_txt)
+    this.btnc.classList.add("iiif2pdf");
     divid.appendChild(this.btnc)
     this.btnc.onclick=function(){ctrl.loadData()}
 
@@ -77,12 +112,22 @@ function iiif2pdf(config) {
     this.btns.setAttribute("disabled","true")
     var save_txt = document.createTextNode("Save PDF")
     this.btns.appendChild(save_txt)
+    this.btns.classList.add("iiif2pdf");
     divid.appendChild(this.btns)
 
-    this.stat = document.createElement("input")
+    divid.appendChild(document.createElement("br"))
+
+    this.prog = document.createElement("progress")
+    this.prog.setAttribute("value", "0")
+    this.prog.setAttribute("max", "100")
+    this.prog.classList.add("iiif2pdf");
+    divid.appendChild(this.prog)
+
+    this.stat = document.createElement("p")
     this.stat.setAttribute("readonly","true")
     this.stat.setAttribute("type", "text")
-    this.stat.setAttribute("value", "Status")
+    this.stat.innerHTML="Status"
+    this.stat.classList.add("iiif2pdf");
     divid.appendChild(this.stat)
   }
 
@@ -104,8 +149,9 @@ function iiif2pdf(config) {
     }
   }
 
-  controllerGUI.prototype.updateProgressbar = function(value) {
+  controllerGUI.prototype.update = function(value,text) {
     this.prog.setAttribute("value",value)
+    this.stat.innerHTML=text
   }
 
   controllerGUI.prototype.createPDF = function(pdfobj) {
@@ -147,9 +193,12 @@ function iiif2pdf(config) {
     }
   }
 
-  controllerAuto.prototype.updateProgressbar = function(value) {
+  controllerAuto.prototype.update = function(value,text) {
     this.prog.setAttribute("value",value)
+    this.stat.innerHTML=text
   }
+
+
 
   controllerAuto.prototype.createPDF = function(pdfobj) {
     pdfobj.addImages()
@@ -254,8 +303,11 @@ function iiif2pdf(config) {
     this.img.crossOrigin = "Anonymous"
     this.img.onload = function() {
       pdfobj.cd--
-      ctrl.updateProgressbar(((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx)
+      var msg = "Downloading "+(pdfobj.mx-pdfobj.cd)+" / "+pdfobj.mx
+      var prg = ((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx
+      ctrl.update(prg,msg)
       if(pdfobj.cd==0) {
+        ctrl.update(100,"Merging")
         ctrl.createPDF(pdfobj)
       }
     }
@@ -322,12 +374,13 @@ function iiif2pdf(config) {
 
   pdfDoc.prototype.reencodeImg = function(img,q) {
     var canvas = document.createElement('canvas')
-    canvas.id     = "delme"
-    canvas.width  = img.naturalWidth
+    canvas.id = "delme"
+    canvas.width = img.naturalWidth
     canvas.height = img.naturalHeight
     var ctx = canvas.getContext("2d")
     ctx.drawImage(img,0,0)
     var retimg = canvas.toDataURL('image/jpeg',q)
+    canvas.remove()
     return retimg
   }
 
@@ -347,9 +400,9 @@ function iiif2pdf(config) {
         var w = ph*ir
       }
       this.document.addPage()
-      // this.document.addImage(this.canvobjs[c].img, (pw-w)/2, (ph-h)/2, w, h )
       this.document.addImage(this.reencodeImg(this.canvobjs[c].img,setup["quality"]), (pw-w)/2, (ph-h)/2, w, h )
     }
+    ctrl.update(100,"Ready.")
   }
 
 }
