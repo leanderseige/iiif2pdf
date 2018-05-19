@@ -4,4 +4,4 @@ This small and hacked Javascript widget facilitates client side rendering of PDF
 
 This widget uses [jsPDF](https://github.com/MrRio/jsPDF) and [jQuery](https://jquery.com/).
 
-!(Widget Screenshot)(images/widget.png)
+![Widget Screenshot](images/widget.png)
