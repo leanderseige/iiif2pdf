@@ -5,3 +5,10 @@ This small Javascript widget implements client side rendering of PDFs from arbit
 This widget uses [jsPDF](https://github.com/MrRio/jsPDF) and [jQuery](https://jquery.com/).
 
 ![Widget Screenshot](images/widget.png)
+
+## ToDos
+
+* use page orientation and format
+* crawl hierarchical ranges
+* select start / end Canvases inside a Sequence
+* estimate filesize in realtime as user changes configuration
