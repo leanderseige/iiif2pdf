@@ -5,8 +5,24 @@
 <title>
 </title>
 <link rel="stylesheet" href="iiif2pdf.css">
+<link rel="stylesheet" href="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.css">
+<style>
+body {
+  font-family: sans-serif;
+  font-size: 16px;
+  line-height: 32px;
+  text-align: center;
+}
+button {
+  font-family: sans-serif;
+  font-size: 16px;
+  margin: 16px;
+  padding:4px;
+}
+</style>
 <script src="https://code.jquery.com/jquery-latest.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.5/jspdf.debug.js" integrity="sha384-CchuzHs077vGtfhGYl9Qtc7Vx64rXBXdIAZIPbItbNyWIRTdG0oYAqki3Ry13Yzu" crossorigin="anonymous"></script>
+<script src="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.js" type="text/javascript" charset="utf-8"></script>
 <script src="iiif2pdf.js"></script>
 </head>
 <body>
@@ -44,14 +60,33 @@ Example 4: a CORS Error :-)
 
 -->
 
-<div id="demo"></div>
+
 <script>
-  var myWidget = new iiif2pdf({
-    "id":"demo",
-    "manifest":"https://iiif.ub.uni-leipzig.de/0000002636/manifest.json",
-    "uri":"https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15",
-  })
+  function launch_iiif2pdf() {
+    $.featherlight('<div id="demo"></div>',null);
+    var in_man=document.getElementById("in_man").value;
+    var in_uri=document.getElementById("in_uri").value;
+    var myWidget = new iiif2pdf({
+      "id":"demo",
+      "manifest":in_man,
+      "uri":in_uri,
+      "resolution":"1024"
+    })
+  }
 </script>
+
+<label for="in_mf">Manifest:</label>
+<input type="text" size="40" id="in_man" value="https://iiif.ub.uni-leipzig.de/0000002636/manifest.json"/>
+<br />
+
+<label for="in_mf">URI:</label>
+<input type="text" size="40" id="in_uri" value="https://iiif.ub.uni-leipzig.de/0000002636/range/0-2-15"/>
+<br />
+
+
+<button id="launch" href="#" onclick="launch_iiif2pdf();">Launch iiif2pdf</button>
+
+
 
 </body>
 </html>
