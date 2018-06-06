@@ -6,6 +6,8 @@ This widget uses [jsPDF](https://github.com/MrRio/jsPDF) and [jQuery](https://jq
 
 ![Widget Screenshot](images/widget.png)
 
+Check out the [demo](http://htmlpreview.github.io/?https://github.com/leanderseige/iiif2pdf/blob/master/demo.html), paste two URIs (manifest + sequence, range or canvas) and create arbitrary PDFs 
+
 ## ToDos
 
 * use page orientation and format
