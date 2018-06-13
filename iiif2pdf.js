@@ -331,7 +331,7 @@ function iiif2pdf(config) {
     this.document.setFontSize(16)
     var lines = this.document.splitTextToSize(m.data['label'], (pdfInMM-margin-margin));
     this.document.text(margin,20,lines);
-
+    
     cursor+=8*lines.length
     this.document.setFontSize(14)
     if('label' in o.data) {
@@ -365,11 +365,15 @@ function iiif2pdf(config) {
       this.canvobjs.push(canvobj)
       canvobj.getImage(this)
     }
-
-  }
+    this.pdfFilename = m.data['label'];
+    if('label' in o.data) {
+      this.pdfFilename += ' - '+o.data['label'];
+    }
+    this.pdfFilename = this.pdfFilename.replace(/[^a-zA-Z0-9-_\.äüöÄÜÖß]/g, ' ')+'.pdf'; 
+}
 
   pdfDoc.prototype.savePDF = function() {
-    this.document.save("test.pdf")
+    this.document.save(this.pdfFilename);
   }
 
   pdfDoc.prototype.reencodeImg = function(img,q) {
