@@ -376,8 +376,7 @@ function iiif2pdf(config) {
     this.document.setFontSize(10)
     this.document.text(20, cursor, m.data['@id'])
     if('attribution' in m.data) {
-      cursor+=8
-      this.document.text(20, cursor, m.data['attribution'])
+      cursor+=this.filterHtmlTags(this.document, cursor+8, m.data['attribution']);
     }
     if('license' in m.data) {
       cursor+=8
@@ -405,7 +404,17 @@ function iiif2pdf(config) {
       this.pdfFilename += ' - '+o.data['label'];
     }
     this.pdfFilename = (this.pdfFilename.replace(/[^a-zA-Z0-9-_\.äüöÄÜÖß]/g, ' ')+'.pdf').replace(/\s+/g, ' '); 
-}
+  }
+  
+  pdfDoc.prototype.filterHtmlTags = function(document, cursor, text) {
+    var moveCursor = 0;
+    var texts=text.split(/<br\s*\/?>/g);
+    for (var t in texts) {
+      document.text(20, cursor+moveCursor, texts[t].replace(/(<([^>]+)>)/g, ''));
+      moveCursor+=8;
+    }
+    return moveCursor;
+  };
 
   pdfDoc.prototype.savePDF = function() {
     this.document.save(this.pdfFilename);
