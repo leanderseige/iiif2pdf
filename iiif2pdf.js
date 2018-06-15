@@ -404,7 +404,7 @@ function iiif2pdf(config) {
     if('label' in o.data) {
       this.pdfFilename += ' - '+o.data['label'];
     }
-    this.pdfFilename = this.pdfFilename.replace(/[^a-zA-Z0-9-_\.äüöÄÜÖß]/g, ' ')+'.pdf'; 
+    this.pdfFilename = (this.pdfFilename.replace(/[^a-zA-Z0-9-_\.äüöÄÜÖß]/g, ' ')+'.pdf').replace(/\s+/g, ' '); 
 }
 
   pdfDoc.prototype.savePDF = function() {
