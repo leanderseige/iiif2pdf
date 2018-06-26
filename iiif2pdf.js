@@ -8,6 +8,31 @@
 function iiif2pdf(config) {
 
   var ctrl
+  
+  var i18n = {
+    de: {
+      selectResolution: 'Auflösung wählen',
+      selectQuality: 'Qualität wählen',
+      createPdf: 'PDF erzeugen',
+      savePdf: 'PDF speichern',
+      status: 'Status',
+      downloading: 'Herunterladen:',
+      merging: 'Füge zusammen',
+      metadata: 'Metadaten',
+      ready: 'Fertig.',
+    },
+    en: {
+      selectResolution: 'Select Resolution',
+      selectQuality: 'Select Quality',
+      createPdf: 'Create PDF',
+      savePdf: 'Save PDF',
+      status: 'Status',
+      downloading: 'Downloading',
+      merging: 'Merging',
+      metadata: 'Metadata',
+      ready: 'Ready.',
+    }
+  }
 
   var setup = {
     "id":"myWidget",
@@ -18,10 +43,20 @@ function iiif2pdf(config) {
     "orientations": ["portrait","landscape"],
     "format":"a4",
     "formats":["a4","letter","legal","a3"],
-    "quality":0.7
+    "quality":0.7,
+    "i18n": i18n.en
   }
 
   $(document).ready(function () {
+    if (config['i18n'] !== undefined){
+      if (typeof config['i18n'] == 'string' || config['i18n'] instanceof String){
+        config.i18n = i18n[config.i18n];
+      } else {
+        for (i in setup.i18n) {
+          config.i18n[i] = config.i18n[i] == null ? setup.i18n[i] : config.i18n[i];
+        }
+      }
+    }
     for(c in config) {
       setup[c]=config[c]
     }
@@ -54,7 +89,7 @@ function iiif2pdf(config) {
     tmp = document.createElement("label")
     tmp.setAttribute("for", "iiif2pdf_selr")
     tmp.classList.add("iiif2pdf");
-    tmp.innerHTML="Select Resolution"
+    tmp.innerHTML=setup.i18n.selectResolution
     divid.appendChild(tmp)
 
     this.selr = document.createElement("select")
@@ -78,7 +113,7 @@ function iiif2pdf(config) {
     tmp = document.createElement("label")
     tmp.setAttribute("for", "iiif2pdf_selq")
     tmp.classList.add("iiif2pdf");
-    tmp.innerHTML="Select Quality"
+    tmp.innerHTML=setup.i18n.selectQuality
     divid.appendChild(tmp)
 
     this.selq = document.createElement("input")
@@ -102,7 +137,7 @@ function iiif2pdf(config) {
     divid.appendChild(document.createElement("br"))
 
     this.btnc = document.createElement("button")
-    var create_txt = document.createTextNode("Create PDF")
+    var create_txt = document.createTextNode(setup.i18n.createPdf)
     this.btnc.appendChild(create_txt)
     this.btnc.classList.add("iiif2pdf");
     divid.appendChild(this.btnc)
@@ -110,7 +145,7 @@ function iiif2pdf(config) {
 
     this.btns = document.createElement("button")
     this.btns.setAttribute("disabled","true")
-    var save_txt = document.createTextNode("Save PDF")
+    var save_txt = document.createTextNode(setup.i18n.savePdf)
     this.btns.appendChild(save_txt)
     this.btns.classList.add("iiif2pdf");
     divid.appendChild(this.btns)
@@ -126,7 +161,7 @@ function iiif2pdf(config) {
     this.stat = document.createElement("p")
     this.stat.setAttribute("readonly","true")
     this.stat.setAttribute("type", "text")
-    this.stat.innerHTML="Status"
+    this.stat.innerHTML=setup.i18n.status
     this.stat.classList.add("iiif2pdf");
     divid.appendChild(this.stat)
   }
@@ -303,11 +338,11 @@ function iiif2pdf(config) {
     this.img.crossOrigin = "Anonymous"
     this.img.onload = function() {
       pdfobj.cd--
-      var msg = "Downloading "+(pdfobj.mx-pdfobj.cd)+" / "+pdfobj.mx
+      var msg = setup.i18n.downloading+" "+(pdfobj.mx-pdfobj.cd)+" / "+pdfobj.mx
       var prg = ((pdfobj.mx-pdfobj.cd)*100)/pdfobj.mx
       ctrl.update(prg,msg)
       if(pdfobj.cd==0) {
-        ctrl.update(100,"Merging")
+        ctrl.update(100,setup.i18n.merging)
         ctrl.createPDF(pdfobj)
       }
     }
@@ -331,7 +366,7 @@ function iiif2pdf(config) {
     this.document.setFontSize(16)
     var lines = this.document.splitTextToSize(m.data['label'], (pdfInMM-margin-margin));
     this.document.text(margin,20,lines);
-
+    
     cursor+=8*lines.length
     this.document.setFontSize(14)
     if('label' in o.data) {
@@ -341,8 +376,7 @@ function iiif2pdf(config) {
     this.document.setFontSize(10)
     this.document.text(20, cursor, m.data['@id'])
     if('attribution' in m.data) {
-      cursor+=8
-      this.document.text(20, cursor, m.data['attribution'])
+      cursor+=this.filterHtmlTags(this.document, cursor+8, m.data['attribution']);
     }
     if('license' in m.data) {
       cursor+=8
@@ -350,7 +384,7 @@ function iiif2pdf(config) {
     }
     cursor+=12
     this.document.setFontSize(14)
-    this.document.text(20, cursor, "Metadaten")
+    this.document.text(20, cursor, setup.i18n.metadata)
     this.document.setFontSize(10)
     cursor+=12
     for(md in m.data.metadata) {
@@ -365,11 +399,25 @@ function iiif2pdf(config) {
       this.canvobjs.push(canvobj)
       canvobj.getImage(this)
     }
-
+    this.pdfFilename = m.data['label'];
+    if('label' in o.data) {
+      this.pdfFilename += ' - '+o.data['label'];
+    }
+    this.pdfFilename = (this.pdfFilename.replace(/[^a-zA-Z0-9-_\.äüöÄÜÖß]/g, ' ')+'.pdf').replace(/\s+/g, ' '); 
   }
+  
+  pdfDoc.prototype.filterHtmlTags = function(document, cursor, text) {
+    var moveCursor = 0;
+    var texts=text.split(/<br\s*\/?>/g);
+    for (var t in texts) {
+      document.text(20, cursor+moveCursor, texts[t].replace(/(<([^>]+)>)/g, ''));
+      moveCursor+=8;
+    }
+    return moveCursor;
+  };
 
   pdfDoc.prototype.savePDF = function() {
-    this.document.save("test.pdf")
+    this.document.save(this.pdfFilename);
   }
 
   pdfDoc.prototype.reencodeImg = function(img,q) {
@@ -402,7 +450,7 @@ function iiif2pdf(config) {
       this.document.addPage()
       this.document.addImage(this.reencodeImg(this.canvobjs[c].img,setup["quality"]), (pw-w)/2, (ph-h)/2, w, h )
     }
-    ctrl.update(100,"Ready.")
+    ctrl.update(100,setup.i18n.ready)
   }
 
 }
