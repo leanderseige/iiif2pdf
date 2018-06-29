@@ -20,6 +20,9 @@ function iiif2pdf(config) {
       merging: 'Füge zusammen',
       metadata: 'Metadaten',
       ready: 'Fertig.',
+      firstCanvas: 'Seiten von',
+      lastCanvas: 'bis',
+      numberOfPagesWarning: 'You have selected a large number of pages. The PDF generation might take some time and severely affect your browser\'s performance, depending on the size.',
     },
     en: {
       selectResolution: 'Select Resolution',
@@ -31,6 +34,9 @@ function iiif2pdf(config) {
       merging: 'Merging',
       metadata: 'Metadata',
       ready: 'Ready.',
+      firstCanvas: 'Pages from',
+      lastCanvas: 'to',
+      numberOfPagesWarning: 'Sie haben eine große Anzahl von Seiten ausgewählt. Das Erzeugen des PDF kann je nach Größe eine längere Zeit in Anspruch nehmen und den Browser erheblich auslasten.',
     }
   }
 
@@ -44,31 +50,11 @@ function iiif2pdf(config) {
     "format":"a4",
     "formats":["a4","letter","legal","a3"],
     "quality":0.7,
-    "i18n": i18n.en
+    "i18n": i18n.en,
+    "selectFromTo": false,
+    "showWarning": false,
+    "warningNumberOfPages": 100,
   }
-
-  $(document).ready(function () {
-    if (config['i18n'] !== undefined){
-      if (typeof config['i18n'] == 'string' || config['i18n'] instanceof String){
-        config.i18n = i18n[config.i18n];
-      } else {
-        for (i in setup.i18n) {
-          config.i18n[i] = config.i18n[i] == null ? setup.i18n[i] : config.i18n[i];
-        }
-      }
-    }
-    for(c in config) {
-      setup[c]=config[c]
-    }
-    switch(setup['mode']) {
-      case 'gui':
-        ctrl = new controllerGUI()
-        break;
-      case 'auto':
-        ctrl = new controllerAuto()
-        break;
-    }
-  })
 
   // Class controllerGUI
 
@@ -81,11 +67,14 @@ function iiif2pdf(config) {
     var stat
 
     var m
+    var firstCanvas
+    var lastCanvas
+    var hint
 
     var tmp
 
     var divid = document.getElementById(setup["id"])
-
+    
     tmp = document.createElement("label")
     tmp.setAttribute("for", "iiif2pdf_selr")
     tmp.classList.add("iiif2pdf");
@@ -136,12 +125,19 @@ function iiif2pdf(config) {
 
     divid.appendChild(document.createElement("br"))
 
+    this.hint = document.createElement("span")
+    this.hint.setAttribute("id", "iiif2pdf_hint")
+    this.hint.classList.add("iiif2pdf")
+    divid.appendChild(this.hint)
+
+    divid.appendChild(document.createElement("br"))
+    
     this.btnc = document.createElement("button")
     var create_txt = document.createTextNode(setup.i18n.createPdf)
     this.btnc.appendChild(create_txt)
     this.btnc.classList.add("iiif2pdf");
     divid.appendChild(this.btnc)
-    this.btnc.onclick=function(){ctrl.loadData()}
+    this.btnc.onclick=function(){ctrl.renderPdf()}
 
     this.btns = document.createElement("button")
     this.btns.setAttribute("disabled","true")
@@ -164,16 +160,102 @@ function iiif2pdf(config) {
     this.stat.innerHTML=setup.i18n.status
     this.stat.classList.add("iiif2pdf");
     divid.appendChild(this.stat)
+
+    this.loadData()
   }
 
   controllerGUI.prototype.loadData = function() {
-    this.btnc.setAttribute("disabled","true")
-    this.selr.setAttribute("disabled","true")
     this.m = new iiifManifest()
+  }
+
+  controllerGUI.prototype.updateControls = function() {
+    this_ = this
+    this.firstCanvas = this.m.canvases[0];
+    this.lastCanvas = this.m.canvases[this.m.canvases.length-1];
+    if (!setup["selectFromTo"]) return;
+    if (this.firstCanvas != this.lastCanvas)
+    {
+      this.selectFirst = this.createCanvasSelect(this.firstCanvas, "iiif2pdf_first")
+      this.selectFirst.onchange = function(event) {
+        this_.firstCanvas = this.value;
+        if (this_.m.canvases.indexOf(this.value) > this_.m.canvases.indexOf(this_.lastCanvas)) {
+          this_.lastCanvas = this.value;
+          this_.selectLast.value = this.value
+        }
+        this_.updateSizeHint()
+      }
+      this.selectLast = this.createCanvasSelect(this.lastCanvas, "iiif2pdf_last")
+      this.selectLast.onchange = function(event) {
+        this_.lastCanvas = this.value;
+        if (this_.m.canvases.indexOf(this.value) < this_.m.canvases.indexOf(this_.firstCanvas)) {
+          this_.firstCanvas = this.value;
+          this_.selectFirst.value = this.value
+        }
+        this_.updateSizeHint()
+      }
+      var nextBr = this.quad.nextSibling
+      this.quad.parentNode.insertBefore(document.createElement("br"), nextBr)
+      this.quad.parentNode.insertBefore(this.createLabel(setup.i18n.firstCanvas, "iiif2pdf_first"), nextBr)
+      this.quad.parentNode.insertBefore(this.selectFirst, nextBr)
+      this.quad.parentNode.insertBefore(this.createLabel(setup.i18n.lastCanvas, "iiif2pdf_last"), nextBr)
+      this.quad.parentNode.insertBefore(this.selectLast, nextBr)
+      this.updateSizeHint()
+    }
+  }
+  
+  controllerGUI.prototype.createLabel = function(label, labelFor) {
+    var labelElement = document.createElement("label")
+    labelElement.setAttribute("for", labelFor)
+    labelElement.classList.add("iiif2pdf");
+    labelElement.innerHTML=label
+    return labelElement;
+  }
+
+  controllerGUI.prototype.createCanvasSelect = function(canvasId, elementId) {
+    var select = document.createElement("select")
+    select.setAttribute("id", elementId)
+    select.classList.add("iiif2pdf")
+    for (var c in this.m.canvases) {
+      var label = this.m.defaultSequenceCanvasLabels[this.m.canvases[c]]+" ("+(this.m.defaultSequenceCanvases.indexOf(this.m.canvases[c])+1)+")";
+      var option = document.createElement("option")
+      option.setAttribute("value", this.m.canvases[c])
+      if (canvasId == this.m.canvases[c]) {
+        option.setAttribute("selected", "true")
+      }
+      option.innerHTML=label;
+      select.appendChild(option)        
+    }
+    return select
+  }
+  
+  controllerGUI.prototype.updateSizeHint = function() {
+    if (!setup["showWarning"]) return;
+    if (this.m.canvases.indexOf(this.lastCanvas) - this.m.canvases.indexOf(this.firstCanvas) > setup["warningNumberOfPages"]) {
+      console.log('set')
+      this.hint.innerHTML = setup.i18n.numberOfPagesWarning
+    } else {
+      console.log('clear')
+      this.hint.innerHTML = ''
+    }
   }
 
   controllerGUI.prototype.parseData = function() {
     this.m.parseManifest()
+  }
+
+  controllerGUI.prototype.renderPdf = function() {
+    this.btnc.setAttribute("disabled","true")
+    this.selr.setAttribute("disabled","true")
+    if (setup["selectFromTo"]) {
+      this.selectFirst.setAttribute("disabled","true")
+      this.selectLast.setAttribute("disabled","true")
+      var actualCanvases = []
+      for (var i = this.m.canvases.indexOf(this.firstCanvas); i<=this.m.canvases.indexOf(this.lastCanvas); i++) {
+        actualCanvases.push(this.m.canvases[i])
+      }
+      this.m.canvases = actualCanvases
+    }
+    this.m.renderPdf();
   }
 
   controllerGUI.prototype.getImageSuffix = function() {
@@ -218,7 +300,14 @@ function iiif2pdf(config) {
 
   controllerAuto.prototype.parseData = function() {
     this.m.parseManifest()
+    this.renderPdf()
   }
+
+  controllerAuto.prototype.renderPdf = function() {
+    this.m.renderPdf();
+  }
+
+  controllerAuto.prototype.updateControls = function() {}
 
   controllerAuto.prototype.getImageSuffix = function() {
     if(setup['resolution']=="Max") {
@@ -275,21 +364,32 @@ function iiif2pdf(config) {
     $.getJSON(setup["manifest"], function(result  ) {
       manifest.data = result
       ctrl.parseData()
+      ctrl.updateControls()
     })
   }
 
   iiifManifest.prototype.parseManifest = function() {
     var subset = this.getSubset(setup["uri"])
     if(subset['@type']=="sc:Range") {
-      var iiifobj = new iiifRange(subset)
+      this.iiifobj = new iiifRange(subset)
     } else if(subset['@type']=="sc:Sequence") {
-      var iiifobj = new iiifSequence(subset)
+      this.iiifobj = new iiifSequence(subset)
     } else if(subset['@type']=="sc:Canvas") {
-      var iiifobj = new iiifCanvas(subset)
+      this.iiifobj = new iiifCanvas(subset)
+    }
+    
+    this.defaultSequenceCanvasLabels = {};
+    this.defaultSequenceCanvases = [];
+    for (var cv in this.data.sequences[0].canvases) {
+      this.defaultSequenceCanvasLabels[this.data.sequences[0].canvases[cv]['@id']] = this.data.sequences[0].canvases[cv]['label'];
+      this.defaultSequenceCanvases.push(this.data.sequences[0].canvases[cv]['@id']);
     }
 
-    var canvases = iiifobj.getCanvases()
-    var doc = new pdfDoc(iiifobj,canvases,this)
+    this.canvases = this.iiifobj.getCanvases()
+  }
+  
+  iiifManifest.prototype.renderPdf = function() {
+    var doc = new pdfDoc(this.iiifobj,this.canvases,this)
   }
 
   iiifManifest.prototype.getURI = function() {
@@ -452,5 +552,28 @@ function iiif2pdf(config) {
     }
     ctrl.update(100,setup.i18n.ready)
   }
+
+  $(document).ready(function () {
+    if (config['i18n'] !== undefined){
+      if (typeof config['i18n'] == 'string' || config['i18n'] instanceof String){
+        config.i18n = i18n[config.i18n];
+      } else {
+        for (i in setup.i18n) {
+          config.i18n[i] = config.i18n[i] == null ? setup.i18n[i] : config.i18n[i];
+        }
+      }
+    }
+    for(c in config) {
+      setup[c]=config[c]
+    }
+    switch(setup['mode']) {
+      case 'gui':
+        ctrl = new controllerGUI()
+        break;
+      case 'auto':
+        ctrl = new controllerAuto()
+        break;
+    }
+  })
 
 }
