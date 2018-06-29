@@ -22,7 +22,7 @@ function iiif2pdf(config) {
       ready: 'Fertig.',
       firstCanvas: 'Seiten von',
       lastCanvas: 'bis',
-      numberOfPagesWarning: 'You have selected a large number of pages. The PDF generation might take some time and severely affect your browser\'s performance, depending on the size.',
+      numberOfPagesWarning: 'Sie haben eine große Anzahl von Seiten ausgewählt. Das Erzeugen des PDF kann je nach Größe eine längere Zeit in Anspruch nehmen und den Browser erheblich auslasten.',
     },
     en: {
       selectResolution: 'Select Resolution',
@@ -36,7 +36,7 @@ function iiif2pdf(config) {
       ready: 'Ready.',
       firstCanvas: 'Pages from',
       lastCanvas: 'to',
-      numberOfPagesWarning: 'Sie haben eine große Anzahl von Seiten ausgewählt. Das Erzeugen des PDF kann je nach Größe eine längere Zeit in Anspruch nehmen und den Browser erheblich auslasten.',
+      numberOfPagesWarning: 'You have selected a large number of pages. The PDF generation might take some time and severely affect your browser\'s performance, depending on the size.',
     }
   }
 
@@ -125,12 +125,13 @@ function iiif2pdf(config) {
 
     divid.appendChild(document.createElement("br"))
 
-    this.hint = document.createElement("span")
-    this.hint.setAttribute("id", "iiif2pdf_hint")
-    this.hint.classList.add("iiif2pdf")
-    divid.appendChild(this.hint)
-
-    divid.appendChild(document.createElement("br"))
+    if (setup["showWarning"]) {
+      this.hint = document.createElement("span")
+      this.hint.setAttribute("id", "iiif2pdf_hint")
+      this.hint.classList.add("iiif2pdf")
+      divid.appendChild(this.hint)
+      divid.appendChild(document.createElement("br"))
+    }
     
     this.btnc = document.createElement("button")
     var create_txt = document.createTextNode(setup.i18n.createPdf)
@@ -231,10 +232,8 @@ function iiif2pdf(config) {
   controllerGUI.prototype.updateSizeHint = function() {
     if (!setup["showWarning"]) return;
     if (this.m.canvases.indexOf(this.lastCanvas) - this.m.canvases.indexOf(this.firstCanvas) > setup["warningNumberOfPages"]) {
-      console.log('set')
       this.hint.innerHTML = setup.i18n.numberOfPagesWarning
     } else {
-      console.log('clear')
       this.hint.innerHTML = ''
     }
   }
@@ -246,7 +245,7 @@ function iiif2pdf(config) {
   controllerGUI.prototype.renderPdf = function() {
     this.btnc.setAttribute("disabled","true")
     this.selr.setAttribute("disabled","true")
-    if (setup["selectFromTo"]) {
+    if (setup["selectFromTo"] && this.m.canvases.length>1) {
       this.selectFirst.setAttribute("disabled","true")
       this.selectLast.setAttribute("disabled","true")
       var actualCanvases = []
