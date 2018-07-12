@@ -217,7 +217,7 @@ function iiif2pdf(config) {
     select.setAttribute("id", elementId)
     select.classList.add("iiif2pdf")
     for (var c in this.m.canvases) {
-      var label = this.m.defaultSequenceCanvasLabels[this.m.canvases[c]]+" ("+(this.m.defaultSequenceCanvases.indexOf(this.m.canvases[c])+1)+")";
+      var label = this.m.sequenceCanvasLabels[this.m.canvases[c]]+" ("+(this.m.sequenceCanvases.indexOf(this.m.canvases[c])+1)+")";
       var option = document.createElement("option")
       option.setAttribute("value", this.m.canvases[c])
       if (canvasId == this.m.canvases[c]) {
@@ -231,7 +231,7 @@ function iiif2pdf(config) {
   
   controllerGUI.prototype.updateSizeHint = function() {
     if (!setup["showWarning"]) return;
-    if (this.m.canvases.indexOf(this.lastCanvas) - this.m.canvases.indexOf(this.firstCanvas) > setup["warningNumberOfPages"]) {
+    if (this.m.canvases.indexOf(this.lastCanvas) - this.m.canvases.indexOf(this.firstCanvas) + 1 > setup["warningNumberOfPages"]) {
       this.hint.innerHTML = setup.i18n.numberOfPagesWarning
     } else {
       this.hint.innerHTML = ''
@@ -368,22 +368,25 @@ function iiif2pdf(config) {
   }
 
   iiifManifest.prototype.parseManifest = function() {
+    this.sequenceCanvasLabels = {};
+    this.sequenceCanvases = [];
+
     var subset = this.getSubset(setup["uri"])
     if(subset['@type']=="sc:Range") {
       this.iiifobj = new iiifRange(subset)
+      for (var cv in this.data.sequences[0].canvases) {
+        this.sequenceCanvasLabels[this.data.sequences[0].canvases[cv]['@id']] = this.data.sequences[0].canvases[cv]['label'];
+        this.sequenceCanvases.push(this.data.sequences[0].canvases[cv]['@id']);
+      }
     } else if(subset['@type']=="sc:Sequence") {
       this.iiifobj = new iiifSequence(subset)
+      for(var cv in this.iiifobj.data['canvases']) {
+        this.sequenceCanvasLabels[this.iiifobj.data['canvases'][cv]['@id']] = this.iiifobj.data['canvases'][cv]['label'];
+        this.sequenceCanvases.push(this.iiifobj.data['canvases'][cv]['@id']);
+      }
     } else if(subset['@type']=="sc:Canvas") {
       this.iiifobj = new iiifCanvas(subset)
     }
-    
-    this.defaultSequenceCanvasLabels = {};
-    this.defaultSequenceCanvases = [];
-    for (var cv in this.data.sequences[0].canvases) {
-      this.defaultSequenceCanvasLabels[this.data.sequences[0].canvases[cv]['@id']] = this.data.sequences[0].canvases[cv]['label'];
-      this.defaultSequenceCanvases.push(this.data.sequences[0].canvases[cv]['@id']);
-    }
-
     this.canvases = this.iiifobj.getCanvases()
   }
   
