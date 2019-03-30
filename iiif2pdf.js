@@ -102,7 +102,7 @@ function iiif2pdf(config) {
         var option = document.createElement("option")
         option.value = setup.resolutions[i]
         option.text = setup.resolutions[i]
-        if(setup.resolutions[i]==config["resolution"]) {
+        if(setup.resolutions[i]==setup["resolution"]) {
           option.setAttribute("selected",true)
         }
         this.selr.appendChild(option)
