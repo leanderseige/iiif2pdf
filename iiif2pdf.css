@@ -8,3 +8,10 @@
 progress.iiif2pdf {
   width:80%;
 }
+
+#iiif2pdf_hint {
+  color: #aa4433;
+  display: inline-block;
+  max-width: 600px;
+  line-height: 1.5em;
+}
